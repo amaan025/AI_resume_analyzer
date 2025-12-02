@@ -4,6 +4,7 @@
 //  - formatsize(1536) => "1.5 MB"? No, 1536 bytes = 1.5 KB
 //  - formatsize(1536) => "1.5 KB"
 
+
 export function formatsize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
 
@@ -28,5 +29,7 @@ export function formatsize(bytes: number): string {
 
   return `${formatter.format(value)} ${unit}`;
 }
-
 export default formatsize;
+
+export const generateUUID = () => crypto.randomUUID();
+

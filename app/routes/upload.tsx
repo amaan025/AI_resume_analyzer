@@ -3,6 +3,9 @@ import Navbar from "~/components/Navbar";
 import FileUploader from "~/components/FileUploader";
 import {usePuterStore} from "~/lib/puter";
 import {useNavigate} from "react-router";
+import {convertPdfToImage} from "~/lib/pdf2img";
+import {generateUUID} from "~/lib/utils";
+import {prepareInstructions} from "../../constants";
 
 const Upload = () => {
 
@@ -20,7 +23,46 @@ const Upload = () => {
         if(!uploadedFile) return setStatusText("Error: Failed to upload file");
 
         setStatusText("Converting to image...");
-        //const imageFile = await convertPdfToImage(file);
+        const imageFile = await convertPdfToImage(file);
+        if(!imageFile.file) {
+            {
+                console.error("PDF→Image error:", imageFile.error);
+                return setStatusText(imageFile.error ?? "Error: Failed to convert pdf to image.");
+            }
+        }
+
+            // return setStatusText("Error: Failed to convert pdf to image.");
+
+        setStatusText('Uploading the image...');
+
+        const uploadedImage = await fs.upload([imageFile.file]);
+        if(!uploadedImage) return setStatusText("Error: Failed to upload image.");
+        setStatusText("Preparing data...");
+
+        const uuid = generateUUID();
+        const data = {
+            id: uuid,
+            resumePath: uploadedFile.path,
+            imagePath: uploadedImage.path,
+            companyName, jobTitle, jobDescription,
+            feedback : ''
+        }
+        await kv.set(`resume:${uuid}`, JSON.stringify(data));
+        setStatusText('Analysing...');
+        const feedback = await ai.feedback(
+            uploadedFile.path,
+            prepareInstructions({ jobTitle, jobDescription })
+        )
+
+        if(!feedback) return setStatusText("Error: Failed to analyse resume");
+        const feedbackText = typeof feedback.message.content === 'string' ? feedback.message.content : feedback.message.content[0].text;
+
+        data.feedback = JSON.parse(feedbackText);
+
+        await kv.set(`resume:${uuid}`, JSON.stringify(data));
+
+        setStatusText('Analysis complete, redirecting...');
+        console.log(data);
     }
 
 
