@@ -1,35 +1,21 @@
-// Utility to format a file size in bytes into a human readable string (KB, MB, GB)
-// Examples:
-//  - formatsize(0) => "0 KB"
-//  - formatsize(1536) => "1.5 MB"? No, 1536 bytes = 1.5 KB
-//  - formatsize(1536) => "1.5 KB"
+import {type ClassValue, clsx} from "clsx";
+import {twMerge} from "tailwind-merge";
 
-
-export function formatsize(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
-
-  const K = 1024;
-  let value = bytes / K; // start at KB
-  let unit: "KB" | "MB" | "GB" = "KB";
-
-  if (value >= K) {
-    value = value / K;
-    unit = "MB";
-  }
-  if (value >= K) {
-    value = value / K;
-    unit = "GB";
-  }
-
-  const isKB = unit === "KB";
-  const formatter = new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: isKB ? 0 : 1,
-    maximumFractionDigits: isKB ? 0 : 1,
-  });
-
-  return `${formatter.format(value)} ${unit}`;
+export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs))
 }
-export default formatsize;
+
+export function formatSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+
+    // Determine the appropriate unit by calculating the log
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    // Format with 2 decimal places and round
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 export const generateUUID = () => crypto.randomUUID();
-
